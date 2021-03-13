@@ -40,7 +40,7 @@ class _database_(object):
     def create_db(self):
         
         def validate(str):
-    
+
             if len(str) > 64 or ('/' in str) or ("\\" in str) or ('.' in str) or (str!='' and str[-1] == ' '):
                 return 0
             else:
@@ -221,8 +221,16 @@ class _table_(object):
 
     def generate_columns(self, rows, tbl_name, selected_db):
 
-        self.window_create_table.destroy()
-
+        def validate(str):
+            if str == '':
+                messagebox.showinfo('Info', 'Enter table name')
+                return 0
+            elif len(str) > 64 or ('/' in str) or ("\\" in str) or ('.' in str) or (str!='' and str[-1] == ' '):
+                messagebox.showinfo("Entry error", "Table name:\n"+"• Cannot be longer than 64 characters;\n"+"• Cannot contain '/' "+r"'\'"+" or '.' characters;\n"+"• Cannot end with space characters.")
+                return 0
+            else:
+                return 1
+    
         # DATA TYPE LISTF
         self.datatypes = ["INT", "TINYINT", "SMALLINT", "MEDIUMINT", "BIGINT",
                         "DECIMAL", "FLOAT", "BOOLEAN", "SERAIL",
@@ -251,7 +259,7 @@ class _table_(object):
 
 
         # VALIDATE USER INPUT
-        def validate():
+        def validate_cols():
             list_col_name = []
             list_col_type = []
             for n in range(rows):
@@ -271,7 +279,7 @@ class _table_(object):
 
          
             # upadte table list
-            if validate():
+            if validate_cols():
                 query = StringVar()
                 query.set("CREATE TABLE `" + str(tbl_name) +"` (")
 
@@ -330,74 +338,83 @@ class _table_(object):
                 pass
 
 
-        self.window_table_columns = Toplevel()
-        self.window_table_columns.geometry("1350x200")
-        self.window_table_columns.title("Create a table")
 
-        # CANVAS
-        main_canvas = Canvas(self.window_table_columns)
-        main_canvas.pack(side=LEFT, fill=BOTH, expand=1)
-        # CREATE SCROLLBAR
-        canvas_scrollbar = ttk.Scrollbar(self.window_table_columns, orient=VERTICAL, command=main_canvas.yview)
-        if rows > 5 :
-            canvas_scrollbar.pack(side=RIGHT, fill=Y)
-        # ADD SCROLLBAR TO CANVAS
-        main_canvas.configure(yscrollcommand=canvas_scrollbar.set)
-        main_canvas.bind('<Configure>', lambda e: main_canvas.configure(scrollregion = main_canvas.bbox("all")))
-        # SUB FRAME
-        sub_frame = Frame(main_canvas)
-        # ADD SUB FRAME TO CANVAS
-        main_canvas.create_window((0,0), window=sub_frame, anchor=NW)
+        if validate(tbl_name):
+            cursor.execute("SHOW TABLES FROM " + selected_db)
+            tbl_list = cursor.fetchall()
+            if (tbl_name,) in tbl_list:
+                messagebox.showinfo("Info", "Table already exists!")
+            else:
+                self.window_create_table.destroy()
 
+                self.window_table_columns = Toplevel()
+                self.window_table_columns.geometry("1350x200")
+                self.window_table_columns.title("Create a table")
 
-        # HEADERS
-        Label(sub_frame, text="Name").grid(row=0, column=0)
-        Label(sub_frame, text="Datatype").grid(row=0, column=1)
-        Label(sub_frame, text="Length").grid(row=0, column=2)
-        Label(sub_frame, text="Default").grid(row=0, column=3)
-        Label(sub_frame, text="Attributes").grid(row=0, column=4)
-        Label(sub_frame, text="Null").grid(row=0, column=5)
-        Label(sub_frame, text="Index").grid(row=0, column=6)
-        Label(sub_frame, text="Auto Increment").grid(row=0, column=7)
+                # CANVAS
+                main_canvas = Canvas(self.window_table_columns)
+                main_canvas.pack(side=LEFT, fill=BOTH, expand=1)
+                # CREATE SCROLLBAR
+                canvas_scrollbar = ttk.Scrollbar(self.window_table_columns, orient=VERTICAL, command=main_canvas.yview)
+                if rows > 5 :
+                    canvas_scrollbar.pack(side=RIGHT, fill=Y)
+                # ADD SCROLLBAR TO CANVAS
+                main_canvas.configure(yscrollcommand=canvas_scrollbar.set)
+                main_canvas.bind('<Configure>', lambda e: main_canvas.configure(scrollregion = main_canvas.bbox("all")))
+                # SUB FRAME
+                sub_frame = Frame(main_canvas)
+                # ADD SUB FRAME TO CANVAS
+                main_canvas.create_window((0,0), window=sub_frame, anchor=NW)
 
 
-        for y in range(rows):
-
-            var_null = StringVar()
-            var_auto_incr = StringVar()
-
-            col_name = Entry(sub_frame, width=25)
-            col_type = ttk.Combobox(sub_frame, value=["INT", "VARCHAR", "TEXT", "DATE"])
-            col_length = Spinbox(sub_frame, from_=1, to=9999, width=6)
-            col_default = Entry(sub_frame, width=25)
-            col_attribute = ttk.Combobox(sub_frame, value=["BINARY", "UNSIGNED", "UNSIGNED ZEROFILL"])
-            col_null = Checkbutton(sub_frame, variable=var_null, onvalue="NULL", offvalue="NOT NULL")
-            col_index = ttk.Combobox(sub_frame, value=["PRIMARY KEY","UNIQUE", "INDEX", "FULLTEXT", "SPATIL"])
-            col_auto_incr = Checkbutton(sub_frame, variable=var_auto_incr, onvalue="AUTO_INCREMENT", offvalue="")
-
-            col_null.deselect()
-            col_auto_incr.deselect()
-
-            col_name.grid(row=y+1, column=0, pady=5, padx=10)
-            col_type.grid(row=y+1, column=1, pady=5, padx=10)
-            col_length.grid(row=y+1, column=2, pady=5, padx=10)
-            col_default.grid(row=y+1, column=3, pady=5, padx=10)
-            col_attribute.grid(row=y+1, column=4, pady=5, padx=10)
-            col_null.grid(row=y+1, column=5, pady=5, padx=10)
-            col_index.grid(row=y+1, column=6, pady=5, padx=10)
-            col_auto_incr.grid(row=y+1, column=7, pady=5, padx=10)
-
-            self.list_col_name.append(col_name)
-            self.list_col_type.append(col_type)
-            self.list_col_length.append(col_length)
-            self.list_col_default.append(col_default)
-            self.list_col_attribute.append(col_attribute)
-            self.list_col_null.append(var_null)
-            self.list_col_index.append(col_index)
-            self.list_col_auto_incr.append(var_auto_incr)
+                # HEADERS
+                Label(sub_frame, text="Name").grid(row=0, column=0)
+                Label(sub_frame, text="Datatype").grid(row=0, column=1)
+                Label(sub_frame, text="Length").grid(row=0, column=2)
+                Label(sub_frame, text="Default").grid(row=0, column=3)
+                Label(sub_frame, text="Attributes").grid(row=0, column=4)
+                Label(sub_frame, text="Null").grid(row=0, column=5)
+                Label(sub_frame, text="Index").grid(row=0, column=6)
+                Label(sub_frame, text="Auto Increment").grid(row=0, column=7)
 
 
-        Button(sub_frame, text="Create table", command=lambda:create_tbl_query(selected_db)).grid(row=rows+1, column=8, columnspan=2, ipadx=30, pady=10)
+                for y in range(rows):
+
+                    var_null = StringVar()
+                    var_auto_incr = StringVar()
+
+                    col_name = Entry(sub_frame, width=25)
+                    col_type = ttk.Combobox(sub_frame, value=["INT", "VARCHAR", "TEXT", "DATE"])
+                    col_length = Spinbox(sub_frame, from_=1, to=9999, width=6)
+                    col_default = Entry(sub_frame, width=25)
+                    col_attribute = ttk.Combobox(sub_frame, value=["BINARY", "UNSIGNED", "UNSIGNED ZEROFILL"])
+                    col_null = Checkbutton(sub_frame, variable=var_null, onvalue="NULL", offvalue="NOT NULL")
+                    col_index = ttk.Combobox(sub_frame, value=["PRIMARY KEY","UNIQUE", "INDEX", "FULLTEXT", "SPATIL"])
+                    col_auto_incr = Checkbutton(sub_frame, variable=var_auto_incr, onvalue="AUTO_INCREMENT", offvalue="")
+
+                    col_null.deselect()
+                    col_auto_incr.deselect()
+
+                    col_name.grid(row=y+1, column=0, pady=5, padx=10)
+                    col_type.grid(row=y+1, column=1, pady=5, padx=10)
+                    col_length.grid(row=y+1, column=2, pady=5, padx=10)
+                    col_default.grid(row=y+1, column=3, pady=5, padx=10)
+                    col_attribute.grid(row=y+1, column=4, pady=5, padx=10)
+                    col_null.grid(row=y+1, column=5, pady=5, padx=10)
+                    col_index.grid(row=y+1, column=6, pady=5, padx=10)
+                    col_auto_incr.grid(row=y+1, column=7, pady=5, padx=10)
+
+                    self.list_col_name.append(col_name)
+                    self.list_col_type.append(col_type)
+                    self.list_col_length.append(col_length)
+                    self.list_col_default.append(col_default)
+                    self.list_col_attribute.append(col_attribute)
+                    self.list_col_null.append(var_null)
+                    self.list_col_index.append(col_index)
+                    self.list_col_auto_incr.append(var_auto_incr)
+
+
+                Button(sub_frame, text="Create table", command=lambda:create_tbl_query(selected_db)).grid(row=rows+1, column=8, columnspan=2, ipadx=30, pady=10)
 
     def insert_data(self, selected_db ,selected_tbl, field_list, entry_dir):
 
