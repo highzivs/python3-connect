@@ -3,7 +3,7 @@ from mysql.connector import Error
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-
+test
 
 class _mysql_(object):
     def connect_sql(self, name, psw):
