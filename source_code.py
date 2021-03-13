@@ -155,15 +155,21 @@ class _database_(object):
                 messagebox.showwarning("Warning","Select database!")
                 return 0
 
-        def delete_db(selected_db):
+        def delete_db(selected_db, frame):
             if selected_db != '':
-                try:
-                    cursor.execute('DROP DATABASE `' + str(selected_db) + "`")
-                except Error as e:
-                    messagebox.showerror("Error",e)
+                question_response = messagebox.askyesno(" ", "Delete database "+ str(selected_db) + "?")
+                if question_response == 1:           
+                    try:
+                        cursor.execute('DROP DATABASE `' + str(selected_db) + "`")
+                    except Error as e:
+                        messagebox.showerror("Error",e)
+                    else:
+                        messagebox.showinfo("Success","Database deleted!")
+                        frame.destroy()
+                        _database_.connect_db(self)
+                        # main.update_database_tab(self, Frame, selected_db, 0)
                 else:
-                    messagebox.showinfo("Success","Database deleted!")
-                    # main.update_database_tab(self, Frame, selected_db, 0)
+                    pass
 
         # 'CONNECT TO AN DATABASE' POPUP
         window_connect_db = Toplevel()
@@ -187,7 +193,7 @@ class _database_(object):
         btn_connect_db = Button(window_connect_db, text="Connect", command=lambda:connect_db_query(self.db_listbox.get(ANCHOR), self.name, self.psw))
         btn_connect_db.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
 
-        btn_delete_db = Button(window_connect_db, text="Delete database", command=lambda:delete_db(self.db_listbox.get(ANCHOR)))
+        btn_delete_db = Button(window_connect_db, text="Delete database", command=lambda:delete_db(self.db_listbox.get(ANCHOR), window_connect_db))
         btn_delete_db.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
 
 
@@ -243,65 +249,85 @@ class _table_(object):
         self.list_col_index = []
         self.list_col_auto_incr = []
 
+
+        # VALIDATE USER INPUT
+        def validate():
+            list_col_name = []
+            list_col_type = []
+            for n in range(rows):
+                list_col_name.append(self.list_col_name[n].get())
+                list_col_type.append(self.list_col_type[n].get())
+
+            if not all(list_col_name):
+                messagebox.showinfo('Info', 'Column name is required!')
+                return 0
+            elif not all(list_col_type):
+                messagebox.showinfo('Info', 'Select data type!')
+                return 0
+            else:
+                return 1
+
         def create_tbl_query(selected_db):
 
+         
             # upadte table list
+            if validate():
+                query = StringVar()
+                query.set("CREATE TABLE `" + str(tbl_name) +"` (")
+
+                for n in range(rows):
+                    query.set(query.get() + "`" + str(self.list_col_name[n].get()) + "` ")
+                    query.set(query.get() + str(self.list_col_type[n].get()))
+
+                    if self.list_col_type[n].get()  not in self.datatyps_w_fixed_len:
+                        query.set(query.get() + "(" + str(self.list_col_length[n].get())+ ")")
+
+                    if self.list_col_attribute[n].get() != "":
+                        query.set(query.get() + " " + str(self.list_col_attribute[n].get()))
+
+                    query.set(query.get() + " " + str(self.list_col_null[n].get()))
+                    
+                    if self.list_col_default[n].get() != "":
+                        query.set(query.get() + " DEFAULT '" +str(self.list_col_default[n].get()) + "'")
+
+                    if self.list_col_auto_incr[n].get() != "":
+                        query.set(query.get() + " " + str(self.list_col_auto_incr[n].get()))
+                    
+
+                    if rows != 1:
+                        if n+1 < rows:
+                            query.set(query.get() + ", ")
 
 
-            query = StringVar()
-            query.set("CREATE TABLE `" + str(tbl_name) +"` (")
+                        if n+1 == rows:
+                            for x in range(rows):
+                                if self.list_col_index[x].get() != "":
+                                    query.set(query.get() + ", " +str(self.list_col_index[x].get()) + " (`" + self.list_col_name[x].get() + "`)")
 
-            for n in range(rows):
-                query.set(query.get() + "`" + str(self.list_col_name[n].get()) + "` ")
-                query.set(query.get() + str(self.list_col_type[n].get()))
 
-                if self.list_col_type[n].get()  not in self.datatyps_w_fixed_len:
-                    query.set(query.get() + "(" + str(self.list_col_length[n].get())+ ")")
 
-                if self.list_col_attribute[n].get() != "":
-                    query.set(query.get() + " " + str(self.list_col_attribute[n].get()))
-
-                query.set(query.get() + " " + str(self.list_col_null[n].get()))
+                    if self.list_col_index[n].get() != "" and rows == 1:
+                        query.set(query.get() + "," + str(self.list_col_index[n].get()) + " (`" + self.list_col_name[n].get() + "`)")
                 
-                if self.list_col_default[n].get() != "":
-                    query.set(query.get() + " DEFAULT '" +str(self.list_col_default[n].get()) + "'")
+                    # if rows == 1:
+                    #     query.set(query.get() + ")")
+                    print(" n= ", n)
+                    print("rows= ", rows)
 
-                if self.list_col_auto_incr[n].get() != "":
-                    query.set(query.get() + " " + str(self.list_col_auto_incr[n].get()))
-                
+                query.set(query.get()+") ENGINE = InnoDB;")
 
-                if rows != 1:
-                    if n+1 < rows:
-                        query.set(query.get() + ", ")
-
-
-                    if n+1 == rows:
-                        for x in range(rows):
-                            if self.list_col_index[x].get() != "":
-                                query.set(query.get() + ", " +str(self.list_col_index[x].get()) + " (`" + self.list_col_name[x].get() + "`)")
-
-
-
-                if self.list_col_index[n].get() != "" and rows == 1:
-                    query.set(query.get() + "," + str(self.list_col_index[n].get()) + " (`" + self.list_col_name[n].get() + "`)")
-            
-                # if rows == 1:
-                #     query.set(query.get() + ")")
-                print(" n= ", n)
-                print("rows= ", rows)
-
-            query.set(query.get()+") ENGINE = InnoDB;")
-
-            print(query.get())
-            try:
-                cursor.execute("USE " + selected_db)
-                cursor.execute(query.get())
-            except Error as e:
-                messagebox.showerror("Error",e)
+                print(query.get())
+                try:
+                    cursor.execute("USE " + selected_db)
+                    cursor.execute(query.get())
+                except Error as e:
+                    messagebox.showerror("Error",e)
+                else:
+                    messagebox.showinfo(title='Success', message='Table has been created')
+                    self.window_table_columns.destroy()
+                    main.update_database_tab(self, Frame, selected_db, 1)
             else:
-                messagebox.showinfo(title='Success', message='Table has been created')
-                self.window_table_columns.destroy()
-                main.update_database_tab(self, Frame, selected_db, 1)
+                pass
 
 
         self.window_table_columns = Toplevel()
@@ -1222,7 +1248,7 @@ class main(object):
                 btn_select_tbl.grid_forget()
                 btn_open_realation_view.grid_forget()
                 btn_open_query_view.grid_forget()
-                question_response = messagebox.askyesno(" ", "Database "+ str(selected_db) + " is emty\nCreate new table?")
+                question_response = messagebox.askyesno(" ", "Database "+ str(selected_db) + " is empty\nCreate new table?")
 
                 if question_response == 1:
                     _table_.create_tbl(self, selected_db)
