@@ -58,9 +58,11 @@ class _database_(object):
                 db_list = cursor.fetchall()
                 if (db_name,) in db_list:
                     question_response = messagebox.askyesno(" ", "Database already exists\nConnect to an existing database?")
-                    
-                    # if question_response == 1:
-                        # connect_db_form()
+                    if question_response == 1:
+                        window_create_db.destroy()
+                        _database_.connect_db(self)
+                    else:
+                        pass
                 else:
                     try:
                         if connection.is_connected():
