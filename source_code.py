@@ -454,12 +454,17 @@ class _table_(object):
             main.update_table_tab(self, Frame, selected_db, selected_tbl)
             print("DATA INSERTED")
 
-    def delete_record(self, selected_record):
-        if not selected_record:
+    def delete_record(self, selected_record, fields, selected_tbl):
+        if not selected_record['values']:
             messagebox.showinfo('', 'SELECT RECORD')
         else:
-            print(selected_record)
-
+            q_delete = messagebox.askyesno('delete record', 'Delete selected record?')
+            if q_delete:
+                del_record_query = StringVar()
+                del_record_query.set("DELETE FROM '" + selected_tbl + "' WHERE " + str(fields[0]) + "= " + str(selected_record['values'][0]))
+                print(del_record_query.get())
+            else:
+                pass
 
 
 class _relations_(object):
@@ -1384,7 +1389,6 @@ class main(object):
 
             cursor.execute("SELECT * FROM `" + selected_tbl + "`")
             table_data = cursor.fetchall()
-        
 
             for n in range(len(table_data)):
                 for x in range(len(self.field_name_list)):
@@ -1426,7 +1430,7 @@ class main(object):
 
             # selected_record =  
             # DELETE BUTTON
-            insert_button = Button(self.tab_tbl, text="DELETE", command=lambda:_table_.delete_record(self,table_tree_view.item(table_tree_view.focus())))
+            insert_button = Button(self.tab_tbl, text="DELETE", command=lambda:_table_.delete_record(self,table_tree_view.item(table_tree_view.focus()), self.field_name_list, selected_tbl))
             insert_button.pack(side=RIGHT)
 
             # VIEW TABLE STRUCTURE BUTTON
